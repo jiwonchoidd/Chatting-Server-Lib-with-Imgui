@@ -1,0 +1,423 @@
+#pragma once
+#include "KThread.h"
+class KAcceptor: public KThread
+{
+public:
+    bool        Run() override;
+public:
+    KAcceptor();
+    KAcceptor(LPVOID pValue);
+    ~KAcceptor();
+};
+
+#pragma once
+#include "KThread.h"
+class KCommandServer : public KThread
+{
+private:
+    enum
+    {
+        COMMAND_NORMAL = 0,
+        COMMAND_HELP = 1,
+        COMMAND_EXIT = 2,
+        COMMAND_KICK = 3,
+    };
+    std::string                 m_Input;
+    int                         m_CommandMode = 0;
+    std::map<std::string, int>  m_CommandMap = { {"/help",1} ,{"/exit",2},{"/kick",3}};
+    std::map<std::string,int>
+        ::iterator              m_iter_map;
+private:
+    void        HelpMode();
+    void        ExitMode();
+    void        KickMode();
+public:
+    bool        Run() override;
+public:
+    KCommandServer();
+    KCommandServer(LPVOID pValue);
+    ~KCommandServer();
+};
+
+#pragma once
+#include <winsock2.h>
+#include <windows.h>
+#include <Ws2tcpip.h> // inet_ntop
+#include <iostream>
+#include <functional>
+#include <list>
+#include <string>
+#include <map>
+#pragma comment	(lib, "ws2_32.lib")
+
+#ifdef DEBUG
+#pragma comment	(lib, "KServerLib_d.lib")
+#endif // DEBUG
+
+namespace kserver_lib
+{
+	template<class Type>
+	class KSingleton
+	{
+	public:
+		static Type& GetInstance()
+		{
+			static Type theSingle;
+			return theSingle;
+		}
+	};
+
+	static char* GetWtM(WCHAR* data)
+	{
+		char retData[4096] = { 0 };
+		// 변형되는 문자열의 크기가 반환된다.
+		int iLength = WideCharToMultiByte(CP_ACP, 0,
+			data, -1, 0, 0, NULL, NULL);
+		int iRet = WideCharToMultiByte(CP_ACP, 0,
+			data, -1,  //  소스
+			retData, iLength, // 대상
+			NULL, NULL);
+		return retData;
+	}
+}#pragma once
+#include "KNetworkUser.h"
+class KNetwork
+{
+public:
+	SOCKET						m_ListenSocket;
+	std::list<KNetworkUser*>	m_Userlist;
+	KNetworkUser*				m_User;
+public:
+	bool	InitNetwork();
+	bool	CloseNetwork();
+	bool	InitServer(int protocol, int iport, const char* ip = nullptr);
+public:
+	int SendMsg(SOCKET sock, char* msg, WORD type);
+	int SendMsg(SOCKET sock, UPACKET& packet);
+	int RecvUser(KNetworkUser* user);
+
+	KNetwork();
+	~KNetwork();
+};
+
+#pragma once
+#include "KServerObj.h"
+#include "KPacket.h"
+#include "KObjectPool.h"
+class KServer;
+//비동기 작업이 완료시점까지 OVERLAPPED 유지 되어 있어야함.
+//
+struct KOV : public KObjectPool<KOV>
+{
+	//상단에 있으면 캐스팅이 가능하다.
+	enum{MODE_RECV =1, MODE_SEND =2, MODE_EXIT= 3};
+	OVERLAPPED ov;
+	int type;
+
+	/*오브젝트 풀 사용으로 재사용이 되는데, 
+	생성자에서 Zeromemory로 이걸 방지함 */
+	KOV()
+	{
+		ZeroMemory(&ov, sizeof(OVERLAPPED));
+		type = MODE_RECV;
+	}
+	KOV(int packetType)
+	{
+		ZeroMemory(&ov, sizeof(OVERLAPPED));
+		type = packetType;
+	}
+};
+//다른 서버에 종속적인 기능이 있으면 안된다. 
+//게임 유저면 게임유저로 상속받아서 사용
+class KNetworkUser : public KServerObj
+{
+public:
+	KServer*	m_pServer;
+	SOCKET		m_Sock;
+	SOCKADDR_IN m_Addr;
+	std::string m_csName;
+	short       m_iPort;
+	bool		m_bConnect = false;
+
+	WSABUF		m_WsaRecvBuffer;
+	WSABUF		m_WsaSendBuffer;
+	char		m_szRecv[2048];
+	char		m_szSend[2048];
+public:
+	// buffer 기능이 필요함
+	char			m_szRecvBuffer[2048];
+	int				m_iPacketPos; // 패킷의 시작 주소
+	int				m_iWritePos; // 현재의 저장 위치 
+	int				m_iReadPos; // 패킷 시작 위치로 부터 받은 바이트
+	std::list<KPacket> m_lPacketPool;
+public:
+	int		DispatchRead(char* sRecvBuffer, int iRecvByte);
+	int		DispatchRecv(char* sRecvBuffer, int iRecvByte);
+	int		DispatchSend(DWORD dwTransfer);
+	int		Dispatch(DWORD dwTransfer, KOV* tov);
+	void	Set(SOCKET sock, SOCKADDR_IN addr, KServer* pServer);
+	int		Recv();
+	int		SendMsg(char* msg, WORD type);
+	bool	Disconnect();
+public:
+	KNetworkUser();
+	virtual ~KNetworkUser();
+};
+
+/*오브젝트 풀*/
+
+#pragma once
+#include	<iostream>
+#define		POOL_MAX_SIZE 1024
+#define		POOL_SIZE_MASK (POOL_MAX_SIZE - 1)
+template <class type>
+class KObjectPool
+{
+	//volatile 최적화(컴파일러) 방지, 변수의 cache 사용 방지
+	static void* volatile m_ObjectPool[POOL_MAX_SIZE];
+	static long long volatile g_iHead; // 생성 및 할당 인덱스
+	static long long volatile g_iTail; // 소멸 및 해제 인덱스
+	// 준비되어 있으면 준비된 오브젝트를 반환해주고
+	// 준비된 오브젝트가 없으면 신규로 생성해서 반환해주자.
+public:
+	static void AllFree()
+	{
+		for (int i = 0; i < POOL_MAX_SIZE; i++)
+		{
+			void* data = InterlockedExchangePointer(&m_ObjectPool[i], nullptr);
+			if (data != nullptr)
+			{
+				_aligned_free(m_ObjectPool[i]);
+			}
+		}
+	}
+	//메모리 할당(메모리 주소)을 하고 생성자 나중에 불러옴 값은 바뀜
+	static void* operator new(size_t size)
+	{
+		//스레드에서 돌아가게 되면 
+		//통신에서는 Overlapped 구조체가 유저마다 있는데
+		//메모리 변수 값 갱신 -> 그 값을 확인 ->(캐시)-> 또 확인 하면 중간에 캐시가 낀다.
+		//실제 데이터와 캐시데이터는 주소가 다름, 고로 캐시를 못쓰게 바꿔놔야함
+		//메모리에 직접가서 들어가있는 값만 확인하겠다
+		//volatile 캐쉬 방지가 필요하다. 
+
+		//동기화를 안써도 변수를 안전하게 바꾸는 함수 인터락 C++ 11 아토믹변수
+		long long iCurrent = InterlockedIncrement64(&g_iHead)-1;
+		long long iPos = iCurrent & POOL_SIZE_MASK;
+
+		void* pObj = InterlockedExchangePointer(&m_ObjectPool[iPos], nullptr);
+		//m_ObjectPool[iPos] = nullptr;
+		if (pObj != nullptr) return pObj;
+		//메모리를 정렬해서 정해진 16의 승수 단위로 말록해라
+		//가상메모리가 아닌 물리적 메모리를 정렬한다.
+		return _aligned_malloc(size, MEMORY_ALLOCATION_ALIGNMENT);
+	}
+	static void  operator delete(void* deleteObj)
+	{
+		long long iCurrent = InterlockedIncrement64(&g_iTail)-1;
+		long long iPos = iCurrent & POOL_SIZE_MASK;
+		void* pObj = InterlockedExchangePointer(&m_ObjectPool[iPos], deleteObj);
+		if (pObj != nullptr)
+		{
+			//블록단위로 메모리 해제
+			_aligned_free(pObj);
+		}
+	}
+};
+template<typename type>
+void* volatile KObjectPool<type>::m_ObjectPool[POOL_MAX_SIZE] = { nullptr, };
+template<typename type>
+long long volatile KObjectPool<type>::g_iHead = 0; // 생성 및 할당 인덱스
+template<typename type>
+long long volatile KObjectPool<type>::g_iTail = 0; // 소멸 및 해제 인덱스#pragma once
+#include "KProtocol.h"
+// data<<header<<index<<name<<damage<<message
+// data>>header>>index>>name>>damage>>message
+class KPacket
+{
+public :
+	UPACKET m_uPacket;
+	char*	m_pOffset;
+public:
+	char* c_str()
+	{
+		return m_pOffset;
+	}
+	void PutData(const char* pData, int iSize);
+	void GetData(const char* pData, int iSize);
+	void Reset();
+public:
+	KPacket& operator << (int data);
+	KPacket& operator << (long data);
+	KPacket& operator << (short data);
+	KPacket& operator << (float data);
+	KPacket& operator << (byte data);
+	KPacket& operator << (char* data);
+	KPacket& operator << (DWORD data);
+	KPacket& operator << (std::string data);
+public:
+	KPacket& operator >> (int& data);
+	KPacket& operator >> (long& data);
+	KPacket& operator >> (short& data);
+	KPacket& operator >> (float& data);
+	KPacket& operator >> (byte& data);
+	KPacket& operator >> (char* data);
+	KPacket& operator >> (DWORD& data);
+	KPacket& operator >> (std::string& data);
+public:
+	KPacket();
+	KPacket(WORD iType);
+	KPacket(const KPacket& packet);
+	~KPacket();
+};
+
+#pragma once
+#include "KNetStd.h"
+/*
+* 패킷 앞에 길이와 타입을 정한 정보를 전송
+* TCP의 패킷 분할되는 특성을 이용해
+* PACKET_HEADER를 붙여서 신뢰성을 보장함.
+* 메세지에 대한 길이 + 패킷에 대한 헤더 사이즈
+* WORD WORD 4바이트 + strlen(msg)
+*/
+#pragma pack (push,1)
+typedef struct
+{
+	//입출력 타입 브로드캐스팅 메세지인지 구별
+	WORD		ioType;
+	WORD		len;
+	WORD		type;
+	DWORD		time;
+}PACKET_HEADER;
+
+typedef struct
+{
+	PACKET_HEADER	ph;
+	char			msg[4096];
+}UPACKET, * P_UPACKET;
+#pragma pack(pop)
+
+struct KChatting
+{
+	long	index;
+	char	name[20];		// 이름
+	char	message[256];	// 내용
+};
+#define PACKET_HEADER_SIZE	10
+//#define	PACKET_CHAT_MSG		1000
+
+enum KPACKET_TYPE
+{
+	PACKET_CHAT_MSG, // 보통 채팅 메세지.
+	PACKET_LOGIN_REQ, // 로그인요청
+	PACKET_LOGOUT_REQ, // 로그아웃요청
+	PACKET_LOGIN_ACK, // 로그인응답
+	PACKET_LOGOUT_ACK, // 로그아웃응답
+	PACKET_LOGOUT_PLAYER, // 로그아웃 플레이어
+
+	PACKET_CREATE_ACCOUNT_REQ = 2000, // 계정생성요청
+	PACKET_DELETE_ACCOUNT_REQ, // 계정삭제요청
+	PACKET_CREATE_ACCOUNT_ACK, // 계정생성응답
+	PACKET_DELETE_ACCOUNT_ACK, // 계정삭제응답
+
+	PACKET_USER_POSITION = 3000, // 케릭터 위치 이동 시작
+	PACKET_STOP_POSITION,// 케릭터 정지
+	PACKET_LOBBY_USER_INFO, // 대기방 유저리스트 정보
+
+	PACKET_CREATE_CHARACTER_REQ = 4000, // 케릭터 생성 요청
+	PACKET_DELETE_CHARACTER_REQ, // 케릭터 삭제 요청
+	PACKET_CREATE_CHARACTER_ACK, // 케릭터 생성 응답
+	PACKET_DELETE_CHARACTER_ACK, // 케릭터 삭제 응답
+
+	PACKET_HIT_CHARACTER = 5000, // 케릭터 피격 받음
+	PACKET_HIT_NPC, // NPC 피격 받음
+	PACKET_ATTACK_CHARACTER, // 케릭터 공격 시작
+	PACKET_ATTACK_NPC, // NPC 공격 시작
+	PACKET_DEAD_CHARACTER, // 케릭터 죽음
+	PACKET_DEAD_NPC, // NPC 죽음
+	PACKET_DAMAGE_CHARACTER, // 케릭터 데미지 받음
+	PACKET_DAMAGE_NPC, // NPC 데미지 받음
+	PACKET_SPAWN_CHARACTER, // 케릭터 스폰
+	PACKET_SPAWN_NPC, // NPC 스폰
+	PACKET_SPAWN_NPC_LIST, // 
+	PACKET_SYNC_CHARACTER, // 케릭터 동기화
+	PACKET_SYNC_NPC_LIST, // NPC 동기화	
+	PACKET_NPC_TARGETMOVE,  // NPC 타켓이동	
+
+
+	PACKET_ZONE_ENTRY_REQ = 6000,//게임존 입장 요청
+	PACKET_ZONE_ENTRY_ACK, // 게임 존 입장 응답
+	PACKET_ZONE_NEW_PLAYER, // 게임 존 입장 케릭터 정보 전송
+	PACKET_ZONE_PLAYERS_INFO, // 게임 존에 입장한 유저들의 플레이 케릭터 정보 전송 
+	PACKET_ZONE_USER_INFO,// 게임존 유저리스트 정보(플레이어+기타(옵저버 등))
+	PACKET_ZONE_TARGET_REQ, // 존 타켓 위치 요청  
+	PACKET_ZONE_TARGET_ACK, // 존 타켓 위치 응답
+};#pragma once
+#include "KNetwork.h"
+#include "KServerObj.h"
+#include "KAcceptor.h"
+#include "KCommandServer.h"
+//브로드캐스트는 서버에서 처리해줘야함
+class KServer : public KServerObj
+{
+	KAcceptor				 m_Acceptor;
+	KCommandServer			 m_Commander;
+public:
+	std::list<KNetworkUser*> m_UserList;
+	KNetwork				 m_Net;
+	std::list<KPacket>		 m_lPacketPool;
+	typedef std::list<KNetworkUser*>::iterator m_UserIter;
+public:
+	int BroadcastUserPacket(KNetworkUser* user);
+	virtual bool AddUser(SOCKET clientSock, SOCKADDR_IN clientAddr);
+protected:
+	virtual bool DelUser(SOCKET clientSock);
+	virtual bool DelUser(KNetworkUser* pUser);
+public:
+	virtual	bool		Init(int port);
+	virtual	bool		Run();
+	virtual	bool		Release();
+
+public:
+	KServer();
+	virtual ~KServer();
+};
+
+#pragma once
+#include "KNetstd.h"
+class KServerObj
+{
+	public:
+		CRITICAL_SECTION m_cs;
+		//Join를 위해 이벤트 생성
+		HANDLE			 m_hKillEvent;
+	public:
+		KServerObj();
+		virtual ~KServerObj();
+};
+
+#pragma once
+#include "KServerObj.h"
+#include <process.h>
+class KThread : public KServerObj
+{
+public:
+	uintptr_t		m_hThread;
+	unsigned int	m_iId;
+	bool			m_bisStarted;
+	LPVOID			m_pObject;
+public:
+	void CreateKThread();
+	void CreateKThread(LPVOID pValue);
+	//쓰레드가 끝날때까지 기다려라 명시.
+	void Join();
+	void Detach();
+	virtual bool Run();
+	static unsigned int WINAPI Runner(LPVOID param);
+public:
+	KThread();
+	KThread(LPVOID pValue);
+	virtual ~KThread();
+};
+
+

@@ -1,0 +1,48 @@
+﻿  compilation object save succeeded; see E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\PixelShader.cso
+  compilation object save succeeded; see E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\VertexShader.cso
+  ImGuiManager.cpp
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_dx11.cpp
+  imgui_impl_win32.cpp
+  imgui_widgets.cpp
+  KCamera.cpp
+  KCore.cpp
+  KDevice.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KDevice.cpp(6,10): warning C4101: 'hr' :참조되지 않은 지역 변수입니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KDevice.cpp(100,1): warning C4002: 함수 같은 매크로 호출 'FAILED'에 대해 인수가 너무 많습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KDevice.cpp(167,36): warning C4244: '=': 'UINT'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KDevice.cpp(168,37): warning C4244: '=': 'UINT'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  KInput.cpp
+  KMath.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KMath\KMath.h(550,9): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  KSound.cpp
+  KState.cpp
+  KTimer.cpp
+  KWindow.cpp
+  KWrite.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(11,18): warning C4244: '=': 'UINT'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(12,18): warning C4244: '=': 'UINT'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(80,69): warning C4244: '인수': 'LONG'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(80,59): warning C4244: '인수': 'LONG'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(80,51): warning C4244: '인수': 'LONG'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(80,42): warning C4244: '인수': 'LONG'에서 'FLOAT'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(85,50): warning C4267: '인수': 'size_t'에서 'UINT32'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KD3DLib\KWrite.cpp(90,48): warning C4267: '인수': 'size_t'에서 'UINT32'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  코드를 생성하고 있습니다...
+  KD3DLib.vcxproj -> E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Export\KD3DLib\KD3DLib.lib
+          1개 파일이 복사되었습니다.
+  ImGuiManager.h
+  KCamera.h
+  KCore.h
+  KDevice.h
+  KInput.h
+  KSound.h
+  KState.h
+  KStd.h
+  KTimer.h
+  KWindow.h
+  KWrite.h
+  resource.h
+         12개 파일이 복사되었습니다.

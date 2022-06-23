@@ -1,0 +1,19 @@
+﻿  KAsyncSelect.cpp
+  KNetwork.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KNetworkLib\KNetwork.cpp(46,50): warning C4267: '=': 'size_t'에서 'WORD'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  KNetworkUser.cpp
+  KPacket.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KNetworkLib\KPacket.cpp(83,32): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KNetworkLib\KPacket.cpp(94,39): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KNetworkLib\KPacket.cpp(127,35): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Source\KNetworkLib\KPacket.cpp(138,35): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  코드를 생성하고 있습니다...
+  KNetworkLib.vcxproj -> E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\Export\KNetworkLib\KNetworkLib.lib
+          1개 파일이 복사되었습니다.
+  KAsyncSelect.h
+  KNetStd.h
+  KNetwork.h
+  KNetworkUser.h
+  KPacket.h
+  KProtocol.h
+          6개 파일이 복사되었습니다.

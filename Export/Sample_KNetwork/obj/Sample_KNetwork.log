@@ -1,0 +1,2 @@
+﻿  Sample.cpp
+E:\Onedrive\OneDrive - nsu.ac.kr\KGCA 자료\제출처\최지원ChatServer\include\ImGuiManager.h(2,10): fatal error C1083: 포함 파일을 열 수 없습니다. 'ImGui/imgui.h': No such file or directory
